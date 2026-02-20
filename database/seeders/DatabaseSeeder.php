@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,11 +13,26 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        // Membuat akun Admin
+        User::create([
+            'name' => 'Administrator TU',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('12345678'), // Enkripsi password
+            'role' => 'admin', // INI KUNCINYA. Kita force role-nya jadi admin
+            'is_active' => true,
+        ]);
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Opsional: Sekalian buat 1 akun mahasiswa untuk testing nanti
+        User::create([
+            'name' => 'Geardo Lapista Simamora',
+            'email' => 'geardo@student.unimal.ac.id',
+            'nim' => '230180121',
+            'password' => Hash::make('password'),
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        // Seed Letter Types
+        $this->call(LetterTypeSeeder::class);
     }
 }
