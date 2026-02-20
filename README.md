@@ -20,7 +20,7 @@ Sistem Informasi E-Surat Akademik adalah aplikasi manajemen administrasi persura
 
 ## 🚀 Cara Instalasi (Local Development)
 1. Clone repository ini:
-   `git clone https://github.com/geardosimamora/nama-repo-anda.git`
+   `git clone https://github.com/geardosimamora/e-surat-akademik`
 2. Install dependencies:
    `composer install` & `npm install`
 3. Copy `.env.example` ke `.env` dan atur database Anda.
