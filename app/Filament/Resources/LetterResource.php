@@ -10,7 +10,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Get;
-// BARIS PENTING DI BAWAH INI UNTUK MEMPERBAIKI ERROR BUILDER:
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
 use Illuminate\Database\Eloquent\Builder;
 
 class LetterResource extends Resource
@@ -37,6 +38,7 @@ class LetterResource extends Resource
                             ->label('NIM')
                             ->content(fn ($record) => $record?->user_snapshot['nim'] ?? $record?->user->nim ?? 'Tidak Terdeteksi'),
                     ])->columns(2),
+                    
 
                 // SECTION 2: AREA KERJA ADMIN TU
                 Forms\Components\Section::make('Pemrosesan Surat')
@@ -60,19 +62,33 @@ class LetterResource extends Resource
                             ->visible(fn (Get $get) => $get('status') === 'approved')
                             ->required(fn (Get $get) => $get('status') === 'approved'),
 
+                        FileUpload::make('manual_file_path')
+                            ->label('Upload File Manual (Opsional)')
+                            ->helperText('Gunakan ini jika ingin mengganti file hasil generate otomatis. File harus berformat PDF.')
+                            ->directory('manual-letters')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(2048) // Maksimal 2MB
+                            ->visible(fn (Get $get) => in_array($get('status'), ['processing', 'approved'])), // Hanya muncul saat diproses/disetujui
+
                         Forms\Components\KeyValue::make('additional_data')
                             ->label('Data Tambahan (Alasan / Detail Instansi)')
                             ->disabled() // Admin hanya bisa membaca, tidak mengubah alasan mahasiswa
                             ->columnSpanFull(),
 
-                        Forms\Components\Textarea::make('rejection_note')
-                            ->label('Alasan Penolakan')
-                            ->placeholder('Sebutkan alasan penolakan secara jelas...')
+                            // KITA GUNAKAN CATATAN_ADMIN SESUAI MIGRATION TADI:
+                        Forms\Components\Textarea::make('catatan_admin')
+                            ->label('Catatan / Alasan Penolakan')
+                            ->placeholder('Sebutkan alasan penolakan atau catatan tambahan...')
                             ->rows(3)
                             ->visible(fn (Get $get) => $get('status') === 'rejected')
-                            ->required(fn (Get $get) => $get('status') === 'rejected')
+                            ->required(fn (Get $get) => $get('status') === 'rejected') // Wajib diisi kalau ditolak
                             ->columnSpanFull(),
                     ])->columns(2),
+
+                    
+
+
+                        
             ]);
     }
 

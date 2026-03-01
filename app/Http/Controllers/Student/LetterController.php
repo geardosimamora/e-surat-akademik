@@ -17,8 +17,8 @@ class LetterController extends Controller
      */
     public function index()
     {
-        $letters = Letter::where('user_id', Auth::id())
-                        ->with('letterType') 
+        $letters = Letter::with('letterType')
+                        ->where('user_id', Auth::id())
                         ->latest()
                         ->get();
                         
@@ -47,16 +47,24 @@ class LetterController extends Controller
         // Validasi bersyarat untuk Kerja Praktek (ID = 2)
         // CATATAN: Sesuaikan ID '2' dengan ID Kerja Praktek di database Anda
         if ($request->letter_type_id == 2) {
-            $rules['nama_instansi'] = ['required', 'string', 'max:255'];
+            $rules['nama_instansi']  = ['required', 'string', 'max:100'];
             $rules['alamat_instansi'] = ['required', 'string', 'max:500'];
-            $rules['tanggal_mulai'] = ['required', 'date', 'after_or_equal:today'];
+            $rules['tanggal_mulai']  = ['required', 'date', 'after_or_equal:today'];
         }
 
         $validated = $request->validate($rules, [
-            'nama_instansi.required' => 'Nama instansi wajib diisi untuk Surat Kerja Praktek',
-            'alamat_instansi.required' => 'Alamat instansi wajib diisi untuk Surat Kerja Praktek',
-            'tanggal_mulai.required' => 'Tanggal mulai KP wajib diisi untuk Surat Kerja Praktek',
-            'tanggal_mulai.after_or_equal' => 'Tanggal mulai KP tidak boleh kurang dari hari ini',
+            // nama_instansi
+            'nama_instansi.required' => 'Nama instansi wajib diisi untuk Surat Kerja Praktek.',
+            'nama_instansi.string'   => 'Nama instansi harus berupa teks.',
+            'nama_instansi.max'      => 'Nama instansi maksimal 100 karakter.',
+            // alamat_instansi
+            'alamat_instansi.required' => 'Alamat instansi wajib diisi untuk Surat Kerja Praktek.',
+            'alamat_instansi.string'   => 'Alamat instansi harus berupa teks.',
+            'alamat_instansi.max'      => 'Alamat instansi maksimal 500 karakter.',
+            // tanggal_mulai
+            'tanggal_mulai.required'      => 'Tanggal mulai KP wajib diisi untuk Surat Kerja Praktek.',
+            'tanggal_mulai.date'          => 'Tanggal mulai KP harus berupa tanggal yang valid.',
+            'tanggal_mulai.after_or_equal' => 'Tanggal mulai KP tidak boleh kurang dari hari ini.',
         ]);
 
         $user = Auth::user();
@@ -88,7 +96,7 @@ class LetterController extends Controller
      * Membatalkan Pengajuan Surat (Mencegah IDOR)
      */
     public function cancel(Letter $letter)
-    {
+    { 
         // Keamanan 1: Pastikan milik sendiri
         if ($letter->user_id !== Auth::id()) {
             abort(403, 'Akses Ditolak.');
@@ -113,15 +121,26 @@ class LetterController extends Controller
             abort(403, 'Akses Ditolak.');
         }
 
-        if ($letter->status !== 'approved' || empty($letter->file_path)) {
-            return back()->with('error', 'File surat belum tersedia atau belum disetujui.');
+        if ($letter->status !== 'approved') {
+            return back()->with('error', 'Surat belum disetujui oleh admin.');
         }
 
-        // Cek fisik file sebelum download
-        if (!Storage::exists($letter->file_path)) {
+        // LOGIKA BARU: Jika ada file manual dari admin, gunakan itu. Jika tidak, gunakan auto-generate.
+        $pathToDownload = $letter->manual_file_path ? $letter->manual_file_path : $letter->file_path;
+
+        if (empty($pathToDownload) || !Storage::exists($pathToDownload)) {
             return back()->with('error', 'Maaf, file fisik tidak ditemukan di server.');
         }
 
-        return Storage::download($letter->file_path);
+        return Storage::download($pathToDownload);
+
+    }
+
+    public function verify($uuid)
+    {
+$letter = Letter::with('letterType')->findOrFail($uuid);
+        // Tampilkan halaman khusus verifikasi
+
+        return view('student.letters.verify', compact('letter'));
     }
 }

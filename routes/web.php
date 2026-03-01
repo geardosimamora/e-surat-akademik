@@ -28,6 +28,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('student.register.process');
 });
 
+Route::get('/verifikasi/{uuid}', [App\Http\Controllers\Student\LetterController::class, 'verify'])
+    ->name('surat.verify');
+
 // --- AREA MAHASISWA (PRIVATE - DENGAN PREFIX) ---
 Route::middleware(['auth', IsStudent::class])
     ->prefix('student')
@@ -51,7 +54,7 @@ Route::middleware(['auth', IsStudent::class])
         Route::prefix('letters')->name('letters.')->group(function() {
             // Create Letter
             Route::get('/create', [LetterController::class, 'create'])->name('create');
-            Route::post('/', [LetterController::class, 'store'])->name('store');
+            Route::post('/', [LetterController::class, 'store'])->name('store')->middleware('throttle:3,1');
             
             // Cancel Letter (DELETE)
             Route::delete('/{letter}/cancel', [LetterController::class, 'cancel'])->name('cancel');

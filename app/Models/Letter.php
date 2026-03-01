@@ -19,6 +19,8 @@ class Letter extends Model
         'user_snapshot',
         'additional_data',
         'file_path',
+        'manual_file_path',
+        'catatan_admin',
         'approved_at',
         'approved_by',
     ];
@@ -46,5 +48,25 @@ class Letter extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    // --- Query Scopes ---
+
+    /**
+     * Scope: hanya surat yang sudah disetujui.
+     * Penggunaan: Letter::approved()->get()
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
+    }
+
+    /**
+     * Scope: hanya surat yang masih menunggu.
+     * Penggunaan: Letter::pending()->get()
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
     }
 }

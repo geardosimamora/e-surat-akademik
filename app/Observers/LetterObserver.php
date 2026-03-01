@@ -10,8 +10,8 @@ class LetterObserver
     public function updated(Letter $letter): void
     {
         // KITA HAPUS wasChanged SEMENTARA UNTUK MEMAKSA MESIN JALAN
-        if ($letter->status === 'approved' && empty($letter->file_path)) {
-            
+        if($letter->status === 'approved' && empty($letter->file_path) && empty($letter->manual_file_path))
+            {            
             try {
                 // 1. Amankan Snapshot (Anti-Error)
                 $snapshot = $letter->user_snapshot;
@@ -25,9 +25,9 @@ class LetterObserver
                 ];
 
                 // 2. QR Code
-                $verifyUrl = route('verify.qr', $letter->id);
+                $verifyUrl = route('surat.verify', $letter->id);
                 $qrCode = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(100)->generate($verifyUrl));
-
+                
                 // 3. Generate PDF
                 $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($letter->letterType->template_view, [
                     'letter'   => $letter,
