@@ -2,13 +2,11 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header Section -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p class="text-gray-600 mt-1">Kelola pengajuan surat akademik Anda</p>
     </div>
 
-    <!-- Alert Messages -->
     @if(session('success'))
         <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
             <div class="flex items-center">
@@ -31,9 +29,7 @@
         </div>
     @endif
 
-    <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <!-- Total Requests -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
@@ -48,7 +44,6 @@
             </div>
         </div>
 
-        <!-- Pending -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
@@ -63,7 +58,6 @@
             </div>
         </div>
 
-        <!-- Approved -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
@@ -78,7 +72,6 @@
             </div>
         </div>
 
-        <!-- Rejected -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div>
@@ -94,7 +87,6 @@
         </div>
     </div>
 
-    <!-- New Request Section -->
     <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 mb-8 text-white">
         <div class="flex flex-col md:flex-row items-center justify-between">
             <div class="mb-4 md:mb-0">
@@ -111,7 +103,6 @@
         </div>
     </div>
 
-    <!-- Request History Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Riwayat Pengajuan</h2>
@@ -130,7 +121,6 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse ($letters as $letter)
                     <tr class="hover:bg-gray-50 transition-colors">
-                        <!-- Jenis Surat -->
                         <td class="px-6 py-4">
                             <div class="flex items-center">
                                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -147,13 +137,11 @@
                             </div>
                         </td>
 
-                        <!-- Tanggal -->
                         <td class="px-6 py-4">
                             <div class="text-sm text-gray-900">{{ $letter->created_at->format('d M Y') }}</div>
                             <div class="text-xs text-gray-500">{{ $letter->created_at->format('H:i') }} WIB</div>
                         </td>
 
-                        <!-- Status -->
                         <td class="px-6 py-4">
                             @if($letter->status === 'pending')
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
@@ -178,9 +166,8 @@
                             @endif
                         </td>
 
-                        <!-- Aksi -->
                         <td class="px-6 py-4">
-                            @if($letter->status === 'approved' && $letter->file_path)
+                            @if($letter->status === 'approved')
                                 <a href="{{ route('student.letters.download', $letter->id) }}" 
                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,9 +175,9 @@
                                     </svg>
                                     Download PDF
                                 </a>
-                            @elseif($letter->status === 'rejected' && $letter->rejection_note)
+                            @elseif($letter->status === 'rejected' && $letter->catatan_admin)
                                 <button 
-                                    onclick="alert('Alasan Penolakan:\n{{ $letter->rejection_note }}')"
+                                    onclick="alert('Alasan Penolakan:\n{{ addslashes($letter->catatan_admin) }}')"
                                     class="inline-flex items-center px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-colors">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>

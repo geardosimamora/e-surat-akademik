@@ -28,10 +28,14 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('student.register.process');
 });
 
-Route::get('/verifikasi/{uuid}', [App\Http\Controllers\Student\LetterController::class, 'verify'])
-    ->name('surat.verify');
+// --- AREA PUBLIK (TANPA LOGIN) ---
+// Verifikasi QR Code untuk Umum/HRD
+Route::get('/verifikasi/{uuid}', [LetterController::class, 'verify'])->name('surat.verify');
+Route::get('/verify/{letter:uuid}', [VerificationController::class, 'verify'])->name('verify.qr');
+Route::get('/verification/{token}', [VerificationController::class, 'show'])->name('verification.show');
 
-// --- AREA MAHASISWA (PRIVATE - DENGAN PREFIX) ---
+
+// --- AREA MAHASISWA SAJA (HANYA STUDENT) ---
 Route::middleware(['auth', IsStudent::class])
     ->prefix('student')
     ->name('student.')
@@ -50,28 +54,18 @@ Route::middleware(['auth', IsStudent::class])
             Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password.update');
         });
         
-        // Letter Routes
+        // Letter Routes (Tanpa Download)
         Route::prefix('letters')->name('letters.')->group(function() {
-            // Create Letter
             Route::get('/create', [LetterController::class, 'create'])->name('create');
             Route::post('/', [LetterController::class, 'store'])->name('store')->middleware('throttle:3,1');
-            
-            // Cancel Letter (DELETE)
             Route::delete('/{letter}/cancel', [LetterController::class, 'cancel'])->name('cancel');
-            
-            // Download Letter (GET)
-            Route::get('/{letter}/download', [LetterController::class, 'download'])->name('download');
         });
     });
 
-// --- AREA PUBLIK (TANPA LOGIN) ---
-// Verifikasi QR Code - Menggunakan UUID agar bisa diakses tanpa login
-Route::get('/verify/{letter:uuid}', [VerificationController::class, 'verify'])
-    ->name('verify.qr');
 
-// Download/Preview PDF - Menggunakan verification_token
-Route::get('/verification/{token}', [VerificationController::class, 'show'])
-    ->name('verification.show');
-
-// Catatan: Rute profile sudah didefinisikan di dalam group student.
-// Tidak perlu didefinisikan ulang di luar group karena akan menyebabkan konflik.
+// --- AREA BERSAMA (ADMIN & MAHASISWA) ---
+Route::middleware(['auth'])->group(function () {
+    // Rute Download dipindah ke sini agar Admin (Filament) tidak kena blokir 403 IsStudent
+    Route::get('/student/letters/{letter}/download', [LetterController::class, 'download'])
+        ->name('student.letters.download');
+});

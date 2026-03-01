@@ -65,7 +65,9 @@ class LetterResource extends Resource
                         FileUpload::make('manual_file_path')
                             ->label('Upload File Manual (Opsional)')
                             ->helperText('Gunakan ini jika ingin mengganti file hasil generate otomatis. File harus berformat PDF.')
+                            ->disk('local') // Eksplisit gunakan local disk (storage/app/)
                             ->directory('manual-letters')
+                            ->preserveFilenames() // Pertahankan nama file original
                             ->acceptedFileTypes(['application/pdf'])
                             ->maxSize(2048) // Maksimal 2MB
                             ->visible(fn (Get $get) => in_array($get('status'), ['processing', 'approved'])), // Hanya muncul saat diproses/disetujui
@@ -143,9 +145,10 @@ class LetterResource extends Resource
                     ->label('Download PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn (Letter $record): string => route('verification.show', ['token' => $record->id]))
-                    ->openUrlInNewTab()
-                    ->visible(fn (Letter $record): bool => $record->status === 'approved' && !empty($record->letter_number)),
+                    ->url(fn (Letter $record): string => route('student.letters.download', $record->id))
+    ->openUrlInNewTab()
+    ->visible(fn (Letter $record): bool => $record->status === 'approved'),
+                    
             ])
             ->bulkActions([]);
     }

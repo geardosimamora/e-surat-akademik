@@ -117,23 +117,38 @@ class LetterController extends Controller
      */
     public function download(Letter $letter)
     {
-        if ($letter->user_id !== Auth::id()) {
-            abort(403, 'Akses Ditolak.');
+        // 1. FIX 403 FORBIDDEN: Izinkan pemilik surat ATAU user dengan role 'admin'
+        if ($letter->user_id !== \Illuminate\Support\Facades\Auth::id() && \Illuminate\Support\Facades\Auth::user()->role !== 'admin') {
+            abort(403, 'Akses Ditolak. Halaman ini khusus untuk mahasiswa pemilik surat atau Admin.');
         }
 
         if ($letter->status !== 'approved') {
             return back()->with('error', 'Surat belum disetujui oleh admin.');
         }
 
-        // LOGIKA BARU: Jika ada file manual dari admin, gunakan itu. Jika tidak, gunakan auto-generate.
-        $pathToDownload = $letter->manual_file_path ? $letter->manual_file_path : $letter->file_path;
-
-        if (empty($pathToDownload) || !Storage::exists($pathToDownload)) {
-            return back()->with('error', 'Maaf, file fisik tidak ditemukan di server.');
+        // 2. FIX FILE NOT FOUND (MANUAL UPLOAD): Filament biasanya simpan di disk 'public'
+        if (!empty($letter->manual_file_path)) {
+            // Cek di disk public dulu (default Filament)
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($letter->manual_file_path)) {
+                return \Illuminate\Support\Facades\Storage::disk('public')->download($letter->manual_file_path);
+            }
+            // Fallback jika diset ke local di Filament
+            if (\Illuminate\Support\Facades\Storage::disk('local')->exists($letter->manual_file_path)) {
+                return \Illuminate\Support\Facades\Storage::disk('local')->download($letter->manual_file_path);
+            }
         }
 
-        return Storage::download($pathToDownload);
+        // 3. FIX FILE NOT FOUND (AUTO-GENERATE): Cek di disk 'local'
+        if (!empty($letter->file_path)) {
+            if (\Illuminate\Support\Facades\Storage::disk('local')->exists($letter->file_path)) {
+                return \Illuminate\Support\Facades\Storage::disk('local')->download($letter->file_path);
+            }
+        }
 
+        // 4. Jika sampai di sini, record ada di DB tapi file fisik gaib. Tambahkan log untuk debug.
+        \Illuminate\Support\Facades\Log::error("Download failed. Physical file missing for Letter ID: {$letter->id}. Path in DB: " . ($letter->file_path ?? 'NULL'));
+        
+        return back()->with('error', 'Surat tidak ditemukan secara fisik di server. Silakan hubungi admin untuk memverifikasi status file.');
     }
 
     public function verify($uuid)
