@@ -19,6 +19,7 @@
 </head>
 <body>
 
+    {{-- FIXED: Kop surat tanpa gambar eksternal untuk mencegah timeout --}}
     <div class="kop-surat">
         <h1>KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI</h1>
         <h1>UNIVERSITAS MALIKUSSALEH</h1>
@@ -41,11 +42,12 @@
 
     <br><br><br>
 
+    {{-- FIXED: Escape output untuk keamanan --}}
     <p>
         Kepada Yth.<br>
-        <strong>Pimpinan {{ $letter->additional_data['nama_instansi'] ?? 'Instansi Tujuan' }}</strong><br>
+        <strong>Pimpinan {{ htmlspecialchars($letter->additional_data['nama_instansi'] ?? 'Instansi Tujuan', ENT_QUOTES, 'UTF-8') }}</strong><br>
         di - <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;{{ $letter->additional_data['alamat_instansi'] ?? 'Tempat' }}
+        &nbsp;&nbsp;&nbsp;&nbsp;{{ htmlspecialchars($letter->additional_data['alamat_instansi'] ?? 'Tempat', ENT_QUOTES, 'UTF-8') }}
     </p>
 
     <p>Dengan hormat,</p>
@@ -58,12 +60,13 @@
         <tr>
             <td style="width: 25%;">Nama</td>
             <td style="width: 2%;">:</td>
-            <td><strong>{{ $snapshot['name'] ?? 'Geardo Lapista Simamora' }}</strong></td>
+            {{-- FIXED: Data sudah di-sanitize di Observer --}}
+            <td><strong>{{ $snapshot['name'] ?? 'Tidak Terdeteksi' }}</strong></td>
         </tr>
         <tr>
             <td>NIM</td>
             <td>:</td>
-            <td>{{ $snapshot['nim'] ?? '230180121' }}</td>
+            <td>{{ $snapshot['nim'] ?? '-' }}</td>
         </tr>
         <tr>
             <td>Program Studi</td>
@@ -72,8 +75,9 @@
         </tr>
     </table>
 
+    {{-- FIXED: Escape dan format tanggal dengan aman --}}
     <p style="text-align: justify;">
-        Adapun Kerja Praktek tersebut direncanakan akan dilaksanakan selama 30 hari kerja, terhitung mulai tanggal <strong>{{ $letter->additional_data['tanggal_mulai'] ?? '15 Oktober 2025' }}</strong>.
+        Adapun Kerja Praktek tersebut direncanakan akan dilaksanakan selama 30 hari kerja, terhitung mulai tanggal <strong>{{ \Carbon\Carbon::parse($letter->additional_data['tanggal_mulai'] ?? now())->format('d F Y') }}</strong>.
     </p>
 
     <p style="text-align: justify;">
@@ -82,6 +86,7 @@
 
     <div class="ttd-container clearfix">
         <div class="qr-box">
+            {{-- FIXED: QR Code menggunakan Base64 (sudah benar) --}}
             @if(!empty($qrCode))
             <img src="data:image/svg+xml;base64,{{ $qrCode }}" alt="QR Code" width="100">
             @endif

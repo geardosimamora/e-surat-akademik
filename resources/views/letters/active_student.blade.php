@@ -20,6 +20,7 @@
 </head>
 <body>
 
+    {{-- FIXED: Kop surat tanpa gambar eksternal untuk mencegah timeout --}}
     <div class="kop-surat">
         <h1>KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI</h1>
         <h1>UNIVERSITAS MALIKUSSALEH</h1>
@@ -36,12 +37,13 @@
         <tr>
             <td style="width: 30%;">Nama</td>
             <td style="width: 2%;">:</td>
-            <td style="width: 68%;"><strong>{{ $snapshot['name'] ?? 'Geardo Lapista Simamora' }}</strong></td>
+            {{-- FIXED: Data sudah di-sanitize di Observer --}}
+            <td style="width: 68%;"><strong>{{ $snapshot['name'] ?? 'Tidak Terdeteksi' }}</strong></td>
         </tr>
         <tr>
             <td>NIM</td>
             <td>:</td>
-            <td>{{ $snapshot['nim'] ?? '230180121' }}</td>
+            <td>{{ $snapshot['nim'] ?? '-' }}</td>
         </tr>
         <tr>
             <td>Program Studi</td>
@@ -53,13 +55,15 @@
     <p>Adalah benar mahasiswa aktif pada Program Studi Sistem Informasi Universitas Malikussaleh pada semester berjalan.</p>
     
     @if(!empty($letter->additional_data['tujuan_surat']))
-    <p>Surat keterangan ini diberikan untuk keperluan: <strong>{{ $letter->additional_data['tujuan_surat'] }}</strong>.</p>
+    {{-- FIXED: Escape output untuk keamanan --}}
+    <p>Surat keterangan ini diberikan untuk keperluan: <strong>{{ htmlspecialchars($letter->additional_data['tujuan_surat'], ENT_QUOTES, 'UTF-8') }}</strong>.</p>
     @else
     <p>Surat keterangan ini diberikan untuk dipergunakan sebagaimana mestinya.</p>
     @endif
 
     <div class="ttd-container clearfix">
         <div class="qr-box">
+            {{-- FIXED: QR Code menggunakan Base64 (sudah benar) --}}
             @if(!empty($qrCode))
             <img src="data:image/svg+xml;base64,{{ $qrCode }}" alt="QR Code" width="100">
             @endif

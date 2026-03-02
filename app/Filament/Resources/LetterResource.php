@@ -11,8 +11,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Get;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Textarea;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 
 class LetterResource extends Resource
 {
@@ -38,7 +38,6 @@ class LetterResource extends Resource
                             ->label('NIM')
                             ->content(fn ($record) => $record?->user_snapshot['nim'] ?? $record?->user->nim ?? 'Tidak Terdeteksi'),
                     ])->columns(2),
-                    
 
                 // SECTION 2: AREA KERJA ADMIN TU
                 Forms\Components\Section::make('Pemrosesan Surat')
@@ -62,35 +61,42 @@ class LetterResource extends Resource
                             ->visible(fn (Get $get) => $get('status') === 'approved')
                             ->required(fn (Get $get) => $get('status') === 'approved'),
 
+                        // FIXED: Security patch untuk upload manual
                         FileUpload::make('manual_file_path')
                             ->label('Upload File Manual (Opsional)')
-                            ->helperText('Gunakan ini jika ingin mengganti file hasil generate otomatis. File harus berformat PDF.')
-                            ->disk('local') // Eksplisit gunakan local disk (storage/app/)
+                            ->helperText('⚠️ Hanya file PDF, maksimal 2MB. File akan mengganti PDF auto-generate.')
+                            ->disk('local') // FIXED: Gunakan local disk untuk keamanan
                             ->directory('manual-letters')
-                            ->preserveFilenames() // Pertahankan nama file original
-                            ->acceptedFileTypes(['application/pdf'])
-                            ->maxSize(2048) // Maksimal 2MB
-                            ->visible(fn (Get $get) => in_array($get('status'), ['processing', 'approved'])), // Hanya muncul saat diproses/disetujui
+                            ->acceptedFileTypes(['application/pdf']) // FIXED: Validasi MIME type
+                            ->maxSize(2048) // FIXED: Maksimal 2MB (2048 KB)
+                            ->preserveFilenames(false) // FIXED: Generate nama file random untuk keamanan
+                            ->getUploadedFileNameForStorageUsing(
+                                fn ($file): string => 'manual-' . uniqid() . '-' . time() . '.pdf' // FIXED: Sanitize filename
+                            )
+                            ->rules([
+                                'mimes:pdf', // FIXED: Double validation
+                                'max:2048',  // FIXED: Double validation
+                            ])
+                            ->validationMessages([
+                                'mimes' => 'File harus berformat PDF.',
+                                'max' => 'Ukuran file maksimal 2MB.',
+                            ])
+                            ->visible(fn (Get $get) => in_array($get('status'), ['processing', 'approved']))
+                            ->columnSpanFull(),
 
                         Forms\Components\KeyValue::make('additional_data')
                             ->label('Data Tambahan (Alasan / Detail Instansi)')
-                            ->disabled() // Admin hanya bisa membaca, tidak mengubah alasan mahasiswa
+                            ->disabled()
                             ->columnSpanFull(),
 
-                            // KITA GUNAKAN CATATAN_ADMIN SESUAI MIGRATION TADI:
                         Forms\Components\Textarea::make('catatan_admin')
                             ->label('Catatan / Alasan Penolakan')
                             ->placeholder('Sebutkan alasan penolakan atau catatan tambahan...')
                             ->rows(3)
                             ->visible(fn (Get $get) => $get('status') === 'rejected')
-                            ->required(fn (Get $get) => $get('status') === 'rejected') // Wajib diisi kalau ditolak
+                            ->required(fn (Get $get) => $get('status') === 'rejected')
                             ->columnSpanFull(),
                     ])->columns(2),
-
-                    
-
-
-                        
             ]);
     }
 
@@ -146,9 +152,8 @@ class LetterResource extends Resource
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->url(fn (Letter $record): string => route('student.letters.download', $record->id))
-    ->openUrlInNewTab()
-    ->visible(fn (Letter $record): bool => $record->status === 'approved'),
-                    
+                    ->openUrlInNewTab()
+                    ->visible(fn (Letter $record): bool => $record->status === 'approved'),
             ])
             ->bulkActions([]);
     }
